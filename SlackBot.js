@@ -10,7 +10,6 @@ class SlackBot {
     const slackUpload = new SlackUpload(config.slack.token);
 
     bot.on('message', (msg) => {
-      let finished = false;
       if (msg.type !== 'message' || !!msg.bot_id || msg.subtype === 'file_share') {
         console.log(colors.blue('no need to process this'));
         return;
@@ -26,12 +25,11 @@ class SlackBot {
       console.log(`${chatId}: ${query}`);
       processText(query)
         .then((data) => {
-          finished = true;
           let text = '';
           if (!data || data.length === 0 || !data[0] || data === '[]') {
             text = `По запросу *${query}* ничего не нашлось :(`;
             bot.postMessage(chatId, text);
-            return;
+            return false;
           }
           text = `Найдено по запросу ${query}`;
           /* we could also send it as an attachment
@@ -47,30 +45,31 @@ class SlackBot {
            }
            ]
            };*/
-          const tempFileName = `tmp/${uuid()}.json`;
-          fs.writeFileSync(tempFileName, data);
-          slackUpload.uploadFile({
-            file: fs.createReadStream(tempFileName),
-            filetype: 'javascript',
-            // title: 'Kibana log '+query+'.json',
-            title: `Kibana log ${query}.json`,
-            initialComment: `Найдено по запросу ${query}`,
-            channels: msg.channel,
-          }, (err, uploadData) => {
-            if (err !== null) {
-              console.log(err);
-              console.log(colors.red(JSON.stringify(err)));
-              bot.postMessage(chatId, `Ошибка при загрузке файла: ${err}`);
-            } else {
-              console.log('Uploaded file details: ', uploadData);
-            }
-            fs.unlinkSync(tempFileName);
+          return new Promise((resolve, reject)=> {
+            const tempFileName = `tmp/${uuid()}.json`;
+            fs.writeFileSync(tempFileName, data);
+            slackUpload.uploadFile({
+              file: fs.createReadStream(tempFileName),
+              filetype: 'javascript',
+              // title: 'Kibana log '+query+'.json',
+              title: `Kibana log ${query}.json`,
+              initialComment: `Найдено по запросу ${query}`,
+              channels: msg.channel,
+            }, (err, uploadData) => {
+              if (err !== null) {
+                reject(err);
+              } else {
+                resolve();
+              }
+              fs.unlinkSync(tempFileName);
+            });
           });
         })
         .catch((err)=> {
-          console.log(err);
-          console.log(colors.red(JSON.stringify(err)));
-          bot.postMessage(chatId, `Ошибка: ${err}`);
+          const errLen = Math.min(255, err.toString().length);
+          const errShort = err.toString().substr(0, errLen);
+          console.log(colors.red(errShort));
+          bot.postMessage(chatId, `Ошибка: ${errShort}`);
         });
     });
   }
