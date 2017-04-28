@@ -1,0 +1,13 @@
+{
+  "slack": {
+    "token": "YOUR_SLACK_BOT_TOKEN",
+    "name": "Somebot",
+    "id": "<@U5***5M7A>",
+    "channel": "D5***SJ7Q"
+  },
+  "kibana": {
+    "cookie": "_ym_uid=148******97461*961; _ga=GA1.2.6**3239.1484***77",
+    "url": "https://kibana.someserver.ru",
+    "searchFor": 21600000
+  }
+}

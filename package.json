@@ -1,0 +1,38 @@
+{
+  "name": "kibana-search-slack-bot",
+  "version": "1.0.0",
+  "description": "Slack bot who searchs in kibana",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no tests yet\" && exit 0",
+    "lint": "node ./node_modules/eslint/bin/eslint.js index.js process.js SlackBot.js",
+    "start": "node ./index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jehy/kibana-search-slack-bot"
+  },
+  "author": "Jehy <npm@jehy.ru>",
+  "license": "MIT",
+  "dependencies": {
+    "bluebird": "^3.5.0",
+    "colors": "^1.1.2",
+    "moment": "^2.18.1",
+    "node-slack-upload": "^1.2.1",
+    "request": "^2.81.0",
+    "request-promise": "^4.2.0",
+    "slackbots": "^1.0.2",
+    "uuid": "^3.0.1"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.24.1",
+    "babel-preset-es2015": "^6.24.1",
+    "eslint": "^3.19.0",
+    "eslint-config-airbnb": "^14.1.0",
+    "eslint-plugin-import": "^2.2.0",
+    "eslint-plugin-jsx-a11y": "^4.0.0",
+    "eslint-plugin-promise": "^3.5.0",
+    "eslint-plugin-react": "^6.10.3",
+    "eslint-plugin-standard": "^3.0.1"
+  }
+}
