@@ -11,18 +11,22 @@
   ],
   "rules": {
     "one-var": "off",
+    "no-console": "off",
     "indent": "off",
     "padded-blocks": "off",
     "no-plusplus": "off",
     "no-underscore-dangle": "off",
     "arrow-spacing": "off",
+    "arrow-body-style": "off",
     "object-curly-spacing": "off",
+    "no-mixed-operators": "off",
     "prefer-const": "warn",
     "no-unused-vars": "warn",
     "object-shorthand": "warn",
     "no-param-reassign": "warn",
-    "no-console": "warn",
     "no-multi-spaces": "off",
+    "jsx-a11y/img-has-alt": "off",
+    "react/jsx-space-before-closing": "off",
     "max-len": [
       "error",
       160

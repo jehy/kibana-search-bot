@@ -2,7 +2,6 @@ const config = require('./config/config.json');
 
 const // TelegramBotApi  = require('node-telegram-bot-api'),
   SlackBotApi = require('slackbots'),
-  // DumbBot         = require('../dumbBot'),
   SlackBot    = require('./SlackBot');
 
 const // telegramBotInstance = new TelegramBotApi(config.telegram.token, {polling: true}),

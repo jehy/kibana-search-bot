@@ -1,8 +1,9 @@
-const childProcess = require('child_process'),
-      moment       = require('moment'),
-      config       = require('./config/config.json'),
-      colors       = require('colors/safe'),
-      Promise      = require('bluebird');
+const
+  config    = require('./config/config.json'),
+  colors    = require('colors/safe'),
+  rp        = require('request-promise'),
+  Promise   = require('bluebird'),
+  userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.29 Safari/537.36';
 
 function shitToJson(str) {
   return str.replace(/\/n/g, '')
@@ -34,65 +35,171 @@ function fixLogEntry(logEntry) {
   };
 }
 
-module.exports = function (query) {
-  return new Promise((resolve, reject) => {
-    query = query
-      .replace(/:/g, '*')
-      .replace(new RegExp('"', 'g'), '')
-      .replace(new RegExp("'", 'g'), '');
+function getIndex(queryFrom, queryTo) {
+  // request current index
+  const kibanaUrl = config.kibana.url;
+  const headers = {
+    Origin: kibanaUrl,
+    'Accept-Encoding': 'none',
+    'Accept-Language': 'en-US,en;q=0.8,ru;q=0.6',
+    'kbn-version': config.kibana.version,
+    'User-Agent': userAgent,
+    'Content-Type': 'application/json;charset=UTF-8',
+    Accept: 'application/json, text/plain, */*',
+    Referer: `${kibanaUrl}/app/kibana`,
+    Connection: 'keep-alive',
+    'Save-Data': 'on',
+    Cookie: config.kibana.cookie,
+  };
 
-    const queryTo = Date.now();
-    const queryFrom = Date.now() - config.kibana.searchFor;// for last 6 hours
-    const indexDate = moment().format('YYYY.MM.DD.14');
-    const cookie = config.kibana.cookie;
-    const kibanaUrl = config.kibana.url;
-    // TODO: replace this shitty curl with request-promise
-    const userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' +
-      ' (KHTML, like Gecko) Chrome/58.0.3029.81 Safari/537.36';
-    const curlRequest = `curl '${kibanaUrl}/elasticsearch/_msearch?timeout=0&ignore_unavailable=true&preference=1493389129744' -s -H 'Origin:` +
-      `${kibanaUrl}' -H 'Accept-Encoding: gzip, deflate, br' -H 'Accept-Language: en-US,en;q=0.8,ru;q=0.6' -H 'kbn-version: 4.5.0' -H 'User-Agent: `
-      + `${userAgent}' -H 'Content-Type: application/json;charset=UTF-8' -H 'Accept: application/json, text/plain, */*' -H 'Referer: `
-      + `${kibanaUrl}/app/kibana?' -H 'Cookie: ${cookie}' -H 'Connection: close' -H 'Save-Data: on' --data-binary $'{"index":["logstash-`
-      + `${indexDate}"],"ignore_unavailable":true}\n{"size":500,"sort":[{"@timestamp":{"order":"desc","unmapped_type":"boolean"}}],` +
-      `"query":{"filtered":{"query":{"query_string":{"analyze_wildcard":true,"query":"*${query }` +
-      `*"}},"filter":{"bool":{"must":[{"range":{"@timestamp":{"gte":${queryFrom},"lte":${queryTo}` +
-      `,"format":"epoch_millis"}}}],"must_not":[]}}}},"highlight":{"pre_tags":["@kibana-highlighted-field@"],` +
-      `"post_tags":["@/kibana-highlighted-field@"],"fields":{"*":{}},"require_field_match":false,"fragment_size":2147483647},` +
-      `"aggs":{"2":{"date_histogram":{"field":"@timestamp","interval":"1m","time_zone":"Asia/Baghdad","min_doc_count":0,` +
-      `"extended_bounds":{"min":${queryFrom},"max":${queryTo}}}}},"fields":["*","_source"],"script_fields":{},` +
-      `"fielddata_fields":["USER_CRASH_DATE","USER_APP_START_DATE","@timestamp","date","data.transaction.date",` +
-      `"data.items.date","data.child_transactions.date","data.transactions.date","data.date_from","data.date_to",` +
-      `"BUILD.VERSION.SECURITY_PATCH"]}\n' --compressed`;
-    console.log(curlRequest);
+  const dataString = {
+    fields: ['@timestamp'],
+    index_constraints: {
+      '@timestamp': {
+        max_value: {gte: queryFrom/* 1494395361553*/, format: 'epoch_millis'},
+        min_value: {lte: queryTo/* 1494398961553*/, format: 'epoch_millis'},
+      },
+    },
+  };
 
+  const options = {
+    url: `${kibanaUrl}/elasticsearch/logstash-*/_field_stats?level=indices`,
+    method: 'POST',
+    headers,
+    json: true,
+    body: dataString,
+  };
+  return rp(options);
+}
 
-    childProcess.exec(curlRequest, {maxBuffer: 5 * 1024 * 1024, timeout: 10000}, (error, stdout, stderr)=> {
-      if (stderr || error) {
-        reject(`Error: ${stderr}${error}`);
-        console.log(colors.red(`Error: ${stderr}${error}`));
-        return;
-      }
-      if (stdout.toString().length === 0) {
-        console.log('too little stdout');
-        reject(`Error: ${stderr}`);
-        return;
-      }
-      let data;
-      try {
-        data = JSON.parse(stdout);
-      } catch (e) {
-        console.log('malformed json!');
-        reject(e + stdout + stderr);
-        return;
-      }
-      try {
-        data = data.responses[0].hits.hits;
-      } catch (e) { // data has no... data
-        reject(JSON.stringify(data));
-        return;
-      }
-      data = data.map(fixLogEntry);
-      resolve(JSON.stringify(data, null, 3));
+function getData(query, queryFrom, queryTo, index) {
+
+  const kibanaUrl = config.kibana.url;
+  const headers = {
+    Origin: kibanaUrl,
+    'Accept-Encoding': 'none',
+    'Accept-Language': 'en-US,en;q=0.8,ru;q=0.6',
+    'kbn-version': config.kibana.version,
+    'User-Agent': userAgent,
+    'Content-Type': 'application/json;charset=UTF-8',
+    Accept: 'application/json, text/plain, */*',
+    Referer: `${kibanaUrl}/app/kibana?`,
+    Connection: 'close',
+    'Save-Data': 'on',
+    Cookie: config.kibana.cookie,
+  };
+
+  const dataString1 = {index: [index], ignore_unavailable: true};
+  const dataString2 = {
+    size: 500,
+    sort: [{'@timestamp': {order: 'desc', unmapped_type: 'boolean'}}],
+    query: {
+      filtered: {
+        query: {query_string: {analyze_wildcard: true, query: query}},
+        filter: {
+          bool: {
+            must: [{
+              range: {
+                '@timestamp': {
+                  gte: queryFrom,
+                  lte: queryTo,
+                  format: 'epoch_millis',
+                },
+              },
+            }],
+            must_not: [],
+          },
+        },
+      },
+    },
+    highlight: {
+      pre_tags: ['@kibana-highlighted-field@'],
+      post_tags: ['@/kibana-highlighted-field@'],
+      fields: {'*': {}},
+      require_field_match: false,
+      fragment_size: 2147483647,
+    },
+    aggs: {
+      2: {
+        date_histogram: {
+          field: '@timestamp',
+          interval: '1m',
+          time_zone: 'Asia/Baghdad',
+          min_doc_count: 0,
+          extended_bounds: {min: queryFrom, max: queryTo},
+        },
+      },
+    },
+    fields: ['*', '_source'],
+    script_fields: {},
+    fielddata_fields: ['USER_CRASH_DATE', 'USER_APP_START_DATE', '@timestamp', 'date',
+      'data.transaction.date', 'data.items.date', 'data.child_transactions.date', 'data.transactions.date',
+      'data.date_from', 'data.date_to', 'BUILD.VERSION.SECURITY_PATCH'],
+  };
+  const dataString = `${JSON.stringify(dataString1)}\r\n${JSON.stringify(dataString2)}\r\n`;
+  // const dataString = Object.assign(dataString1,dataString2);
+  // console.log(colors.yellow(`Request:\n${JSON.stringify(dataString1, null, 3)}\r\n${JSON.stringify(dataString2, null, 3)}\r\n`));
+
+  const options = {
+    url: `${kibanaUrl}/elasticsearch/_msearch?timeout=0&ignore_unavailable=true&preference=${config.kibana.preference}`,
+    method: 'POST',
+    headers,
+    json: false,
+    body: dataString,
+  };
+  // console.log(colors.yellow(JSON.stringify(options, null, 3)));
+  return rp(options);
+}
+
+module.exports = (query)=> {
+  const queryTo = Date.now();
+  const queryFrom = Date.now() - config.kibana.searchFor * 3600 * 1000;// for last searchFor hours
+
+  const userQuery = query
+    .replace(/:/g, '*')
+    .replace(new RegExp('"', 'g'), '')
+    .replace(new RegExp("'", 'g'), '');
+  const indexData = getIndex(queryFrom, queryTo);
+
+  return indexData
+    .then((data)=> {
+      console.log('indices:');
+      const indexes = Object.keys(data.indices);
+      console.log(indexes);
+      console.log('\n');
+      return indexes;
+    })
+    // .then(indexes=> getData(userQuery, queryFrom, queryTo, indexes[0]))
+    .then((indexes)=> {
+      const promises = [];
+      indexes.forEach((index)=> {
+        promises.push(getData(userQuery, queryFrom, queryTo, index));
+      });
+      return Promise.all(promises)
+        .then((dataArray)=> {
+          let allData = [];
+          dataArray.forEach((element)=> {
+            let data;
+            try {
+              data = JSON.parse(element);
+            } catch (e) {
+              console.log(colors.red('malformed json!'));
+              console.log(colors.red(e + element));
+              return;
+            }
+            try {
+              data = data.responses[0].hits.hits;
+            } catch (e) { // data has no... data
+              console.log(colors.red(`No hits.hits: ${JSON.stringify(data)}`));
+              return;
+            }
+            data = data.map(fixLogEntry);
+            allData = allData.concat(data);
+          });
+          return allData;
+        });
+    })
+    .then((data)=> {
+      return {count: data.length, data: JSON.stringify(data, null, 3)};
     });
-  });
 };

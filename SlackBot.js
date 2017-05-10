@@ -1,6 +1,6 @@
 const processText = require('./process'),
       colors      = require('colors/safe'),
-      fs          = require('fs'),
+      fs          = require('fs-extra'),
       uuid        = require('uuid/v4'),
       SlackUpload = require('node-slack-upload');
 
@@ -23,16 +23,18 @@ class SlackBot {
       const query  = msg.text,
             chatId = msg.channel;
       console.log(`${chatId}: ${query}`);
+
+      bot.postMessage(chatId, null, {as_user: true, type: 'typing'});
       processText(query)
         .then((data) => {
           let text = '';
-          if (!data || data.length === 0 || !data[0] || data === '[]') {
-            text = `По запросу *${query}* ничего не нашлось :(`;
-            bot.postMessage(chatId, text);
+          if (!data || !data.count || data.count === 0 || !data.data || data.data === '[]') {
+            text = `По запросу *${query}* ничего не нашлось за последние ${config.kibana.searchFor} часов :(`;
+            bot.postMessage(chatId, text, {as_user: true});
             return false;
           }
-          text = `Найдено по запросу ${query}`;
-          /* we could also send it as an attachment
+          text = `${data.count} результатов найдено по запросу *${query}*  за последние ${config.kibana.searchFor} часов`;
+          /* we could also send it as an attachment but sending as a file is much cooler
            let params = {
            "attachments": [
            {
@@ -45,31 +47,33 @@ class SlackBot {
            }
            ]
            };*/
-          return new Promise((resolve, reject)=> {
-            const tempFileName = `tmp/${uuid()}.json`;
-            fs.writeFileSync(tempFileName, data);
-            slackUpload.uploadFile({
-              file: fs.createReadStream(tempFileName),
-              filetype: 'javascript',
-              // title: 'Kibana log '+query+'.json',
-              title: `Kibana log ${query}.json`,
-              initialComment: `Найдено по запросу ${query}`,
-              channels: msg.channel,
-            }, (err, uploadData) => {
-              if (err !== null) {
-                reject(err);
-              } else {
-                resolve();
-              }
-              fs.unlinkSync(tempFileName);
-            });
-          });
+          const tempFileName = `tmp/${uuid()}.json`;
+          return fs.writeFile(tempFileName, data.data)
+            .then(()=>
+              new Promise((resolve, reject)=> {
+                slackUpload.uploadFile({
+                  file: fs.createReadStream(tempFileName),
+                  // content: data.data,  it simply does not work :(
+                  filetype: 'javascript',
+                  // title: 'Kibana log '+query+'.json',
+                  title: `Kibana log ${query}.json`,
+                  initialComment: text,
+                  channels: msg.channel,
+                }, (err, uploadData) => {
+                  if (err !== null) {
+                    reject(err);
+                  } else {
+                    resolve();
+                  }
+                });
+              })
+                .then(()=>fs.unlink(tempFileName)));
         })
         .catch((err)=> {
           const errLen = Math.min(255, err.toString().length);
           const errShort = err.toString().substr(0, errLen);
           console.log(colors.red(errShort));
-          bot.postMessage(chatId, `Ошибка: ${errShort}`);
+          bot.postMessage(chatId, `Ошибка: ${errShort}`, {as_user: true});
         });
     });
   }
