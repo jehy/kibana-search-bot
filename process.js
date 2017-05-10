@@ -158,7 +158,8 @@ module.exports = (query)=> {
   const userQuery = query
     .replace(/:/g, '*')
     .replace(new RegExp('"', 'g'), '')
-    .replace(new RegExp("'", 'g'), '');
+    .replace(new RegExp("'", 'g'), '')
+    .replace(/<(.*?)> /g, '');// remove bot call @smth
   const indexData = getIndex(queryFrom, queryTo);
 
   return indexData
