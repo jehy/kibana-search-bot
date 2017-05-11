@@ -13,18 +13,19 @@ class SlackBot {
       if (msg.type !== 'message' || !!msg.bot_id || msg.subtype === 'file_share') {
         console.log(colors.blue('no need to process this'));
         return;
-      } else if (msg.type === 'message') {
-        console.log(colors.yellow(JSON.stringify(msg)));
+      }
+      if (msg.text === undefined) {
+        console.log(colors.blue('empty message'));
+        return;
       }
       if ((msg.text.indexOf(config.slack.id) === -1) && (msg.channel !== config.slack.channel)) {
-        console.log(colors.blue('not my message!'));
+        console.log(colors.blue('not my message'));
         return;
       }
       const query  = msg.text,
             chatId = msg.channel;
-      console.log(`${chatId}: ${query}`);
-
-      bot.postMessage(chatId, null, {as_user: true, type: 'typing'});
+      console.log(colors.yellow(`Processing ${chatId}: ${query}`));
+      bot.ws.send(JSON.stringify({type: 'typing', channel: chatId}));
       processText(query)
         .then((data) => {
           let text = '';
@@ -70,8 +71,9 @@ class SlackBot {
                 .then(()=>fs.unlink(tempFileName)));
         })
         .catch((err)=> {
-          const errLen = Math.min(255, err.toString().length);
-          const errShort = err.toString().substr(0, errLen);
+          const errorString = err.toString();
+          const errLen = Math.min(255, errorString.length);
+          const errShort = errorString.substr(0, errLen);
           console.log(colors.red(errShort));
           bot.postMessage(chatId, `Ошибка: ${errShort}`, {as_user: true});
         });
