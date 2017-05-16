@@ -7,6 +7,8 @@
 If you have access to kibana but don't have access to elastic search, you can use this
 bot for simple access to data via slack.
 
+![Dashboard looks liek this](search.png?raw=true "Dashboard")
+
 ## Installation
 ```bash
 npm install git+ssh://git@github.com:jehy/kibana-search-slack-bot.git
@@ -23,7 +25,7 @@ npm install git+ssh://git@github.com:jehy/kibana-search-slack-bot.git
     "channel": "D5***SJ7Q"
   },
   "kibana": {
-    "cookie": "_ym_uid=148******97461*961; _ga=GA1.2.6**3239.1484***77",
+    "cookie": "some important cookie data",
     "url": "https://kibana.someserver.ru",
     "searchFor": 6,
     "preference": 1493389129744,
