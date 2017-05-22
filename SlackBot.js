@@ -12,7 +12,7 @@ class SlackBot {
     bot.on('message', (msg) => {
       // console.log(colors.yellow(JSON.stringify(msg, null, 3)));
       if (msg.type !== 'message' && msg.type !== 'bot_message') {
-        console.log(colors.blue(`no need to process this (wrong message type ${msg.type})`));
+        console.log(colors.blue(`no need to process this (not my message type ${msg.type})`));
         return;
       }
 
@@ -34,6 +34,13 @@ class SlackBot {
       if (foundRequestId !== null) {
         foundRequestId = foundRequestId[0];
         console.log(colors.blue(`Found key in message: ${foundRequestId}`));
+      }
+
+      if (msg.attachments != null && msg.attachments[0] != null && msg.attachments[0].text != null && foundRequestId === null) {
+        foundRequestId = msg.attachments[0].text.match(new RegExp(config.kibana.myKey, 'i'));
+        if (foundRequestId !== null) {
+          foundRequestId = foundRequestId[0];
+        }
       }
 
       if ((foundRequestId === null) && (msg.text.indexOf(config.slack.id) === -1) && (msg.channel !== config.slack.channel)) {
