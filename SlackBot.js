@@ -10,22 +10,34 @@ class SlackBot {
     const slackUpload = new SlackUpload(config.slack.token);
 
     bot.on('message', (msg) => {
-      if (msg.type !== 'message' || !!msg.bot_id || msg.subtype === 'file_share') {
-        console.log(colors.blue('no need to process this'));
+      // console.log(colors.yellow(JSON.stringify(msg, null, 3)));
+      if (msg.type !== 'message' && msg.type !== 'bot_message') {
+        console.log(colors.blue(`no need to process this (wrong message type ${msg.type})`));
         return;
       }
+
+      if (msg.user === config.slack.id) {
+        console.log(colors.blue('no need to process this (my own message)'));
+        return;
+      }
+
+      if (msg.subtype === 'file_share') {
+        console.log(colors.blue(`no need to process this (wrong message subtype ${msg.subtype})`));
+        return;
+      }
+
       if (msg.text === undefined) {
-        console.log(colors.blue('empty message'));
+        console.log(colors.blue('no need to process this (empty message)'));
         return;
       }
       let foundRequestId = msg.text.match(new RegExp(config.kibana.myKey, 'i'));
       if (foundRequestId !== null) {
         foundRequestId = foundRequestId[0];
-        console.log(colors.blue(`Found key in message: ${foundRequestId[0]}`));
+        console.log(colors.blue(`Found key in message: ${foundRequestId}`));
       }
 
       if ((foundRequestId === null) && (msg.text.indexOf(config.slack.id) === -1) && (msg.channel !== config.slack.channel)) {
-        console.log(colors.blue('not my message'));
+        console.log(colors.blue('not message for me (no my id, not my channel, no found request IDs)'));
         return;
       }
       const query  = foundRequestId || msg.text,

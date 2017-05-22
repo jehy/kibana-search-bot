@@ -155,11 +155,11 @@ module.exports = (query)=> {
   const queryTo = Date.now();
   const queryFrom = Date.now() - config.kibana.searchFor * 3600 * 1000;// for last searchFor hours
 
-  const userQuery = query
-    .replace(/:/g, '*')
+  const userQuery = `"${query
+  // .replace(/:/g, '*')
     .replace(new RegExp('"', 'g'), '')
     .replace(new RegExp("'", 'g'), '')
-    .replace(/<(.*?)> /g, '');// remove bot call @smth
+    .replace(/<(.*?)> /g, '').trim()}"`;// remove bot call @smth
   const indexData = getIndex(queryFrom, queryTo);
 
   return indexData
