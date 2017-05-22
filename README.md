@@ -29,6 +29,7 @@ npm install git+ssh://git@github.com:jehy/kibana-search-slack-bot.git
     "url": "https://kibana.someserver.ru",
     "searchFor": 6,
     "preference": 1493389129744,
+    "myKey":"/([a-z0-9]+:[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i",
     "version": "4.5.0"
   }
 }

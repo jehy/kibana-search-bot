@@ -18,11 +18,17 @@ class SlackBot {
         console.log(colors.blue('empty message'));
         return;
       }
-      if ((msg.text.indexOf(config.slack.id) === -1) && (msg.channel !== config.slack.channel)) {
+      let foundRequestId = msg.text.match(new RegExp(config.kibana.myKey, 'i'));
+      if (foundRequestId !== null) {
+        foundRequestId = foundRequestId[0];
+        console.log(colors.blue(`Found key in message: ${foundRequestId[0]}`));
+      }
+
+      if ((foundRequestId === null) && (msg.text.indexOf(config.slack.id) === -1) && (msg.channel !== config.slack.channel)) {
         console.log(colors.blue('not my message'));
         return;
       }
-      const query  = msg.text,
+      const query  = foundRequestId || msg.text,
             chatId = msg.channel;
       console.log(colors.yellow(`Processing ${chatId}: ${query}`));
       bot.ws.send(JSON.stringify({type: 'typing', channel: chatId}));
