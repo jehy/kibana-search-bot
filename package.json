@@ -1,6 +1,6 @@
 {
   "name": "kibana-search-slack-bot",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Slack bot who searchs in kibana",
   "main": "index.js",
   "scripts": {
