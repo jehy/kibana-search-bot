@@ -1,10 +1,11 @@
 {
   "name": "kibana-search-slack-bot",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Slack bot who searchs in kibana",
   "main": "index.js",
   "scripts": {
     "test": "npm run lint",
+    "deploy": "npm install --production",
     "lint": "node ./node_modules/eslint/bin/eslint.js index.js process.js SlackBot.js modules",
     "start": "node ./index.js"
   },
@@ -16,7 +17,6 @@
   "license": "MIT",
   "dependencies": {
     "bluebird": "^3.5.0",
-    "colors": "^1.1.2",
     "fs-extra": "^3.0.1",
     "logfox": "^0.2.19",
     "node-slack-upload": "^1.2.1",
