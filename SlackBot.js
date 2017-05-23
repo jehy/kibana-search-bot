@@ -1,39 +1,38 @@
 const processText = require('./process'),
-      colors      = require('colors/safe'),
       fs          = require('fs-extra'),
       uuid        = require('uuid/v4'),
       SlackUpload = require('node-slack-upload');
 
 
 class SlackBot {
-  constructor(bot, config) {
+  constructor(bot, config, app) {
     const slackUpload = new SlackUpload(config.slack.token);
 
     bot.on('message', (msg) => {
       // console.log(colors.yellow(JSON.stringify(msg, null, 3)));
       if (msg.type !== 'message' && msg.type !== 'bot_message') {
-        console.log(colors.blue(`no need to process this (not my message type ${msg.type})`));
+        app.log.v(`no need to process this (not my message type ${msg.type})`);
         return;
       }
 
       if (msg.user === config.slack.id) {
-        console.log(colors.blue('no need to process this (my own message)'));
+        app.log.v('no need to process this (my own message)');
         return;
       }
 
       if (msg.subtype === 'file_share') {
-        console.log(colors.blue(`no need to process this (wrong message subtype ${msg.subtype})`));
+        app.log.v(`no need to process this (wrong message subtype ${msg.subtype})`);
         return;
       }
 
       if (msg.text === undefined) {
-        console.log(colors.blue('no need to process this (empty message)'));
+        app.log.v('no need to process this (empty message)');
         return;
       }
       let foundRequestId = msg.text.match(new RegExp(config.kibana.myKey, 'i'));
       if (foundRequestId !== null) {
         foundRequestId = foundRequestId[0];
-        console.log(colors.blue(`Found key in message: ${foundRequestId}`));
+        app.log.v(`Found key in message: ${foundRequestId}`);
       }
 
       if (msg.attachments != null && msg.attachments[0] != null && msg.attachments[0].text != null && foundRequestId === null) {
@@ -44,22 +43,33 @@ class SlackBot {
       }
 
       if ((foundRequestId === null) && (msg.text.indexOf(config.slack.id) === -1) && (msg.channel !== config.slack.channel)) {
-        console.log(colors.blue('not message for me (no my id, not my channel, no found request IDs)'));
+        app.log.v('not message for me (no my id, not my channel, no found request IDs)');
         return;
       }
       const query  = foundRequestId || msg.text,
             chatId = msg.channel;
-      console.log(colors.yellow(`Processing ${chatId}: ${query}`));
-      bot.ws.send(JSON.stringify({type: 'typing', channel: chatId}));
-      processText(query)
+      app.log.i(`Processing ${chatId}: ${query}`);
+      let finished = false;
+
+      const sendTyping = ()=> {
+        if (!finished) {
+          bot.ws.send(JSON.stringify({type: 'typing', channel: chatId}));
+          setTimeout(sendTyping, 3000);
+        }
+      };
+
+      sendTyping();
+      processText(query, app.log)
         .then((data) => {
           let text = '';
           if (!data || !data.count || data.count === 0 || !data.data || data.data === '[]') {
             text = `По запросу *${query}* ничего не нашлось за последние ${config.kibana.searchFor} часов :(`;
+            app.log.i(`Nothing found for ${query}`);
             bot.postMessage(chatId, text, {as_user: true});
             return false;
           }
           text = `${data.count} результатов найдено по запросу *${query}*  за последние ${config.kibana.searchFor} часов`;
+          app.log.i(`${data.count} results found for ${query}`);
           /* we could also send it as an attachment but sending as a file is much cooler
            let params = {
            "attachments": [
@@ -87,6 +97,7 @@ class SlackBot {
                   channels: msg.channel,
                 }, (err, uploadData) => {
                   if (err !== null) {
+                    app.log.e('Error uploading file to slack: ', err);
                     reject(err);
                   } else {
                     resolve();
@@ -99,8 +110,11 @@ class SlackBot {
           const errorString = err.toString();
           const errLen = Math.min(255, errorString.length);
           const errShort = errorString.substr(0, errLen);
-          console.log(colors.red(errShort));
+          app.log.e(err);
           bot.postMessage(chatId, `Ошибка: ${errShort}`, {as_user: true});
+        })
+        .finally(()=> {
+          finished = true;
         });
     });
   }

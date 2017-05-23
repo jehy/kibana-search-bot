@@ -95,7 +95,7 @@ function getData(query, queryFrom, queryTo, index) {
     sort: [{'@timestamp': {order: 'desc', unmapped_type: 'boolean'}}],
     query: {
       filtered: {
-        query: {query_string: {analyze_wildcard: true, query: query}},
+        query: {query_string: {analyze_wildcard: true, query}},
         filter: {
           bool: {
             must: [{
@@ -151,7 +151,7 @@ function getData(query, queryFrom, queryTo, index) {
   return rp(options);
 }
 
-module.exports = (query)=> {
+module.exports = (query, log)=> {
   const queryTo = Date.now();
   const queryFrom = Date.now() - config.kibana.searchFor * 3600 * 1000;// for last searchFor hours
 
@@ -164,10 +164,8 @@ module.exports = (query)=> {
 
   return indexData
     .then((data)=> {
-      console.log('indices:');
       const indexes = Object.keys(data.indices);
-      console.log(indexes);
-      console.log('\n');
+      log.v('indices:', indexes);
       return indexes;
     })
     // .then(indexes=> getData(userQuery, queryFrom, queryTo, indexes[0]))
@@ -184,14 +182,13 @@ module.exports = (query)=> {
             try {
               data = JSON.parse(element);
             } catch (e) {
-              console.log(colors.red('malformed json!'));
-              console.log(colors.red(e + element));
+              log.e('malformed json!', e, element);
               return;
             }
             try {
               data = data.responses[0].hits.hits;
             } catch (e) { // data has no... data
-              console.log(colors.red(`No hits.hits: ${JSON.stringify(data)}`));
+              log.e('No hits.hits:', data);
               return;
             }
             data = data.map(fixLogEntry);
