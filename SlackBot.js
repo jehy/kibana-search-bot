@@ -29,16 +29,19 @@ class SlackBot {
         app.log.v('no need to process this (empty message)');
         return;
       }
-      let foundRequestId = msg.text.match(new RegExp(config.kibana.myKey, 'i'));
+      // replace to avoid extra data in id like %22requestId%22:%22mApi:7260
+      let foundRequestId = msg.text.replace(new RegExp('%22', 'g'), '"').match(new RegExp(config.kibana.myKey, 'i'));
       if (foundRequestId !== null) {
         foundRequestId = foundRequestId[0];
         app.log.v(`Found key in message: ${foundRequestId}`);
       }
 
       if (msg.attachments != null && msg.attachments[0] != null && msg.attachments[0].text != null && foundRequestId === null) {
-        foundRequestId = msg.attachments[0].text.match(new RegExp(config.kibana.myKey, 'i'));
+        // replace to avoid extra data in id like %22requestId%22:%22mApi:7260
+        foundRequestId = msg.attachments[0].text.replace(new RegExp('%22', 'g'), '"').match(new RegExp(config.kibana.myKey, 'i'));
         if (foundRequestId !== null) {
           foundRequestId = foundRequestId[0];
+          app.log.v(`Found key in attachment: ${foundRequestId}`);
         }
       }
 
