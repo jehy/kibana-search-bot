@@ -30,6 +30,7 @@ function fixLogEntry(logEntry) {
     level: logEntry._source.level,
     message: logEntry._source['@message'],
     orderId: logEntry._source['@orderId'], // custom field
+    requestId: logEntry._source.requestId, // custom field
     data: msgData, // custom field
   };
 }
