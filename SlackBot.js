@@ -9,7 +9,7 @@ class SlackBot {
     const slackUpload = new SlackUpload(config.slack.token);
 
     bot.on('message', (msg) => {
-      // console.log(colors.yellow(JSON.stringify(msg, null, 3)));
+      // app.log.e(JSON.stringify(msg, null, 3));
       if (msg.type !== 'message' && msg.type !== 'bot_message') {
         app.log.v(`no need to process this (not my message type ${msg.type})`);
         return;
@@ -45,23 +45,22 @@ class SlackBot {
         }
       }
 
-      if ((foundRequestId === null) && (msg.text.indexOf(config.slack.id) === -1) && (msg.channel !== config.slack.channel)) {
-        app.log.v('not message for me (no my id, not my channel, no found request IDs)');
+      if ((foundRequestId === null) && (msg.channel[0] !== 'D') && (msg.text.indexOf(config.slack.id) === -1)) {
+        app.log.v('not message for me (no my id, no found request IDs, not direct)');
         return;
       }
       const query  = foundRequestId || msg.text,
             chatId = msg.channel;
       app.log.i(`Processing ${chatId}: ${query}`);
-      let finished = false;
 
-      const sendTyping = ()=> {
-        if (!finished) {
+      const timerId = setInterval(()=> {
+        try {
           bot.ws.send(JSON.stringify({type: 'typing', channel: chatId}));
-          setTimeout(sendTyping, 3000);
+        } catch (e) {
+          app.log.e(e);
         }
-      };
+      });
 
-      sendTyping();
       processText(query, app.log)
         .then((data) => {
           let text = '';
@@ -117,7 +116,7 @@ class SlackBot {
           bot.postMessage(chatId, `Ошибка: ${errShort}`, {as_user: true});
         })
         .finally(()=> {
-          finished = true;
+          clearInterval(timerId);
         });
     });
   }

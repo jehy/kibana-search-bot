@@ -21,8 +21,7 @@ npm install git+ssh://git@github.com:jehy/kibana-search-slack-bot.git
   "slack": {
     "token": "YOUR_SLACK_BOT_TOKEN",
     "name": "Somebot",
-    "id": "<@U5***5M7A>",
-    "channel": "D5***SJ7Q"
+    "id": "<@U5***5M7A>"
   },
   "kibana": {
     "cookie": "some important cookie data",
