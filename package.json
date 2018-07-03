@@ -7,7 +7,9 @@
     "test": "npm run lint",
     "deploy": "npm install --production",
     "lint": "node ./node_modules/eslint/bin/eslint.js index.js process.js SlackBot.js modules",
-    "start": "node ./index.js"
+    "start": "node ./index.js",
+    "snyk-protect": "snyk protect",
+    "prepare": "npm run snyk-protect"
   },
   "repository": {
     "type": "git",
@@ -23,7 +25,8 @@
     "request": "^2.81.0",
     "request-promise": "^4.2.1",
     "slackbots": "^1.0.2",
-    "uuid": "^3.0.1"
+    "uuid": "^3.0.1",
+    "snyk": "^1.88.0"
   },
   "devDependencies": {
     "babel-cli": "^6.24.1",
@@ -35,5 +38,6 @@
     "eslint-plugin-promise": "^3.5.0",
     "eslint-plugin-react": "^7.0.1",
     "eslint-plugin-standard": "^3.0.1"
-  }
+  },
+  "snyk": true
 }
