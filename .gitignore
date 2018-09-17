@@ -1,6 +1,5 @@
 .idea
 node_modules
-config/config.json
-config/config.test.json
+config/runtime.json
 npm-debug.log
 .DS_Store

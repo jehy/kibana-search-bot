@@ -4,8 +4,10 @@
  */
 
 const
-  LogWriter = require('logfox'),
-  Promise   = require('bluebird');
+  LogWriter = require('logfox');
+
+
+const Promise   = require('bluebird');
 
 
 module.exports = function (app, config) {

@@ -1,12 +1,12 @@
-const config = require('./config/config.json');
 
-const // TelegramBotApi  = require('node-telegram-bot-api'),
-  SlackBotApi  = require('slackbots'),
-  LogWriter    = require('logfox'),
-  logWriter    = new LogWriter(config.Logging),
-  app          = {logWriter},
-  setLogRotate = require('./modules/logRotate'),
-  SlackBot     = require('./SlackBot');
+const SlackBotApi  = require('slackbots');
+const LogWriter    = require('logfox');
+const config = require('config');
+
+const logWriter    = new LogWriter(config.Logging);
+const app          = {logWriter};
+const setLogRotate = require('./modules/logRotate');
+const SlackBot     = require('./SlackBot');
 
 app.logWriter.start()
   .then(() => {

@@ -1,7 +1,7 @@
-const processText = require('./process'),
-      fs          = require('fs-extra'),
-      uuid        = require('uuid/v4'),
-      SlackUpload = require('node-slack-upload');
+const fs = require('fs-extra');
+const uuid = require('uuid/v4');
+const SlackUpload = require('node-slack-upload');
+const processText = require('./process');
 
 
 class SlackBot {
@@ -49,8 +49,10 @@ class SlackBot {
         app.log.v('not message for me (no my id, no found request IDs, not direct)');
         return;
       }
-      const query  = foundRequestId || msg.text,
-            chatId = msg.channel;
+      const query  = foundRequestId || msg.text;
+
+
+      const chatId = msg.channel;
       app.log.i(`Processing ${chatId}: ${query}`);
 
       const timerId = setInterval(()=> {
@@ -84,29 +86,28 @@ class SlackBot {
            "color": "#7CD197"
            }
            ]
-           };*/
+           }; */
           const tempFileName = `tmp/${uuid()}.json`;
           return fs.writeFile(tempFileName, data.data)
-            .then(()=>
-              new Promise((resolve, reject)=> {
-                slackUpload.uploadFile({
-                  file: fs.createReadStream(tempFileName),
-                  // content: data.data,  it simply does not work :(
-                  filetype: 'javascript',
-                  // title: 'Kibana log '+query+'.json',
-                  title: `Kibana log ${query}.json`,
-                  initialComment: text,
-                  channels: msg.channel,
-                }, (err, uploadData) => {
-                  if (err !== null) {
-                    app.log.e('Error uploading file to slack: ', err);
-                    reject(err);
-                  } else {
-                    resolve();
-                  }
-                });
-              })
-                .then(()=>fs.unlink(tempFileName)));
+            .then(()=> new Promise((resolve, reject)=> {
+              slackUpload.uploadFile({
+                file: fs.createReadStream(tempFileName),
+                // content: data.data,  it simply does not work :(
+                filetype: 'javascript',
+                // title: 'Kibana log '+query+'.json',
+                title: `Kibana log ${query}.json`,
+                initialComment: text,
+                channels: msg.channel,
+              }, (err, uploadData) => {
+                if (err !== null) {
+                  app.log.e('Error uploading file to slack: ', err);
+                  reject(err);
+                } else {
+                  resolve();
+                }
+              });
+            })
+              .then(()=>fs.unlink(tempFileName)));
         })
         .catch((err)=> {
           const errorString = err.toString();

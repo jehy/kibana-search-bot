@@ -1,8 +1,8 @@
-const
-  config    = require('./config/config.json'),
-  rp        = require('request-promise'),
-  Promise   = require('bluebird'),
-  userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.29 Safari/537.36';
+const  config    = require('config');
+const  rp        = require('request-promise');
+const  Promise   = require('bluebird');
+
+const  userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.29 Safari/537.36';
 
 function shitToJson(str) {
   return str.replace(/\/n/g, '')
@@ -56,8 +56,8 @@ function getIndex(queryFrom, queryTo) {
     fields: ['@timestamp'],
     index_constraints: {
       '@timestamp': {
-        max_value: {gte: queryFrom/* 1494395361553*/, format: 'epoch_millis'},
-        min_value: {lte: queryTo/* 1494398961553*/, format: 'epoch_millis'},
+        max_value: {gte: queryFrom/* 1494395361553 */, format: 'epoch_millis'},
+        min_value: {lte: queryTo/* 1494398961553 */, format: 'epoch_millis'},
       },
     },
   };

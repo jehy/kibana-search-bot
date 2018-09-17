@@ -12,10 +12,11 @@ bot for simple access to data via slack.
 ## Installation
 ```bash
 npm install git+ssh://git@github.com:jehy/kibana-search-slack-bot.git
+cp config/config.json config/runtime.json
 ```
 
 ## Usage
-**config.json**
+**runtime.json**
 ```json
 {
   "slack": {
